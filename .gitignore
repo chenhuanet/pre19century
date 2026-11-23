@@ -1,0 +1,11 @@
+# 凭据：不要提交
+.env
+.env.*
+!.env.example
+*.token
+secrets/
+
+# 本地缓存
+__pycache__/
+*.py[cod]
+.DS_Store
