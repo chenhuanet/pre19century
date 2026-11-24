@@ -6,6 +6,7 @@
   var chips = document.getElementById("gChips");
   var count = document.getElementById("gCount");
   var more = document.getElementById("gMore");
+  var hasGallery = !!(masonry && chips && count && more);
 
   var THEME_EN = {
     "信仰与图像": "Faith & Image", "山水与自然": "Landscape & Nature",
@@ -125,25 +126,27 @@
       render();
     });
   }
-  chips.addEventListener("click", function (e) {
-    var b = e.target.closest("[data-kind]");
-    if (!b) return;
-    state.filters[b.getAttribute("data-kind")] = b.getAttribute("data-value");
-    state.visible = 30;
-    renderChips();
-    render();
-  });
-  more.addEventListener("click", function () {
-    state.visible += 30;
-    render();
-  });
+  if (hasGallery) {
+    chips.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-kind]");
+      if (!b) return;
+      state.filters[b.getAttribute("data-kind")] = b.getAttribute("data-value");
+      state.visible = 30;
+      renderChips();
+      render();
+    });
+    more.addEventListener("click", function () {
+      state.visible += 30;
+      render();
+    });
+  }
   document.addEventListener("click", function (e) {
     if (e.target.closest("[data-lang-toggle]")) {
       var nextLang = lang() === "en" ? "zh" : "en";
       document.documentElement.setAttribute("data-lang", nextLang);
       document.documentElement.setAttribute("lang", nextLang === "en" ? "en" : "zh-CN");
       try { localStorage.setItem("chenhua-lang", nextLang); } catch (err) {}
-      setTimeout(function () { renderChips(); render(); }, 0);
+      if (hasGallery) setTimeout(function () { renderChips(); render(); }, 0);
     }
     if (e.target.closest("[data-themebtn]")) {
       var light = document.documentElement.getAttribute("data-theme") === "light";
@@ -151,5 +154,5 @@
       try { localStorage.setItem("chenhua-theme", light ? "dark" : "light"); } catch (err2) {}
     }
   });
-  load();
+  if (hasGallery) load();
 })();
