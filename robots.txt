@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
 Sitemap: https://pre19century.chenhua.net/sitemap.xml
+Sitemap: https://pre19century.chenhua.net/sitemap-images.xml
