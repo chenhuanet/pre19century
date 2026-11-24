@@ -1,7 +1,7 @@
 (function () {
   "use strict";
   var CFG = window.GALLERY_CONFIG || {};
-  var state = { items: [], filters: { collection: "all", theme: "all", region: "all", decade: "all" }, visible: 30 };
+  var state = { items: [], filters: { collection: "all", theme: "all", region: "all", decade: "all", from: null, to: null }, visible: 30 };
   var masonry = document.getElementById("gMasonry");
   var chips = document.getElementById("gChips");
   var count = document.getElementById("gCount");
@@ -49,7 +49,9 @@
       return (state.filters.collection === "all" || x.collection === state.filters.collection) &&
         (state.filters.theme === "all" || x.curation_theme === state.filters.theme) &&
         (state.filters.region === "all" || x.region === state.filters.region) &&
-        (state.filters.decade === "all" || x.decade === state.filters.decade);
+        (state.filters.decade === "all" || x.decade === state.filters.decade) &&
+        (state.filters.from === null || (x.year != null && Number(x.year) >= state.filters.from)) &&
+        (state.filters.to === null || (x.year != null && Number(x.year) <= state.filters.to));
     });
   }
   function values(field) {
@@ -117,6 +119,8 @@
         if (q.get(k)) state.filters[k] = q.get(k);
         else if (cfg[k]) state.filters[k] = cfg[k];
       });
+      if (q.get("from")) state.filters.from = parseInt(q.get("from"), 10);
+      if (q.get("to")) state.filters.to = parseInt(q.get("to"), 10);
       renderChips();
       render();
     });
