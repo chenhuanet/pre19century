@@ -54,7 +54,7 @@
   function textOf(el) { return (el.textContent || "").replace(/\s+/g, ""); }
 
   function findSearchLink() {
-    var nodes = document.querySelectorAll(".desknav a, .masthead-nav a, .g-nav a, .sf-nav a");
+    var nodes = document.querySelectorAll(".desknav a, .masthead-nav a, .sf-nav a");
     for (var i = 0; i < nodes.length; i++) {
       var a = nodes[i];
       var href = a.getAttribute("href") || "";
@@ -67,7 +67,7 @@
   }
 
   function removeSearchLinks() {
-    var nodes = document.querySelectorAll(".desknav a, .masthead-nav a, .g-nav a, .sf-nav a");
+    var nodes = document.querySelectorAll(".desknav a, .masthead-nav a, .sf-nav a");
     for (var i = nodes.length - 1; i >= 0; i--) {
       var a = nodes[i];
       if (textOf(a).toLowerCase().indexOf("search") >= 0 ||
@@ -78,7 +78,7 @@
   }
 
   function removeHomeNavLink() {
-    Array.prototype.forEach.call(document.querySelectorAll(".desknav, .masthead-nav, .g-nav"), function (nav) {
+    Array.prototype.forEach.call(document.querySelectorAll(".desknav, .masthead-nav"), function (nav) {
       var first = nav.querySelector("a");
       if (!first) return;
       var label = textOf(first);
@@ -212,7 +212,7 @@
     var foot = FOOT_NAV.map(a);
     var headHtml = head.join("");
     var footHtml = foot.join("");
-    Array.prototype.forEach.call(document.querySelectorAll(".desknav, .masthead-nav, .g-nav"), function (nav) {
+    Array.prototype.forEach.call(document.querySelectorAll(".desknav, .masthead-nav"), function (nav) {
       nav.innerHTML = headHtml;
     });
     Array.prototype.forEach.call(document.querySelectorAll(".site-foot .sf-nav"), function (nav) {
@@ -461,4 +461,105 @@
     });
   }
   bootTabbar();
+})();
+
+/* Theme image randomisation.  The static 8 + 8 cards are a no-JS fallback;
+   every page load replaces them with a fresh pick from the theme's own pool. */
+(function () {
+  if (window.__chenhuaThemeRandom) return;
+  window.__chenhuaThemeRandom = true;
+
+  function readJSON(id) {
+    var node = document.getElementById(id);
+    if (!node) return null;
+    try { return JSON.parse(node.textContent || "{}"); } catch (e) { return null; }
+  }
+
+  function shuffled(items) {
+    var a = items.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function choose(items, n, used) {
+    var out = [];
+    var list = shuffled(items || []);
+    for (var i = 0; i < list.length && out.length < n; i++) {
+      var item = list[i];
+      if (!item || !item.img || used[item.img]) continue;
+      used[item.img] = true;
+      out.push(item);
+    }
+    return out;
+  }
+
+  function applyThemePool(pool) {
+    if (!pool) return;
+    var used = {};
+    [["painting", "paint-grid"], ["photo", "photo-grid"]].forEach(function (pair) {
+      var kind = pair[0], id = pair[1];
+      var grid = document.getElementById(id);
+      if (!grid) return;
+      var all = pool[kind] || [];
+      // A pool of exactly eight would repeat the same whole set on every
+      // load. Take seven from it; larger pools keep the full 8-card grid.
+      var take = all.length > 8 ? 8 : (all.length > 1 ? 7 : all.length);
+      var items = choose(all, take, used);
+      if (!items.length) return;
+      grid.innerHTML = items.map(function (x) { return x.html; }).join("");
+      var counter = grid.parentNode.querySelector("h2 .n");
+      if (counter) counter.textContent = String(items.length);
+    });
+  }
+
+  function bootThemeDetail() {
+    var pool = readJSON("theme-pool");
+    if (pool && (pool.painting || pool.photo)) {
+      applyThemePool(pool);
+      return;
+    }
+    var node = document.getElementById("theme-pool");
+    var src = node && node.getAttribute("data-src");
+    if (!src || !window.fetch) return;
+    fetch(src, { credentials: "same-origin" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(applyThemePool)
+      .catch(function () {});
+  }
+
+  function bootThemeIndex() {
+    var map = readJSON("theme-covers");
+    if (!map) return;
+    var used = {};
+    var cards = document.querySelectorAll("[data-theme-key]");
+    for (var i = 0; i < cards.length; i++) {
+      var key = cards[i].getAttribute("data-theme-key");
+      var candidates = shuffled(map[key] || []);
+      var pick = null;
+      for (var j = 0; j < candidates.length; j++) {
+        if (candidates[j].img && !used[candidates[j].img]) { pick = candidates[j]; break; }
+      }
+      if (!pick && candidates.length) pick = candidates[0];
+      if (!pick || !pick.img) continue;
+      var img = cards[i].querySelector(".pic img");
+      if (!img) continue;
+      img.src = pick.img;
+      img.alt = pick.alt || img.alt;
+      used[pick.img] = true;
+    }
+  }
+
+  function bootThemeRandom() {
+    bootThemeDetail();
+    bootThemeIndex();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootThemeRandom);
+  } else {
+    bootThemeRandom();
+  }
 })();
